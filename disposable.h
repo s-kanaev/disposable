@@ -15,7 +15,67 @@ public:
     using Type = T;
     using Self = Disposable<Type>;
 
+    /**
+     * Lock class. Implements RAII if required.
+     * May be used in a way similar to unique_lock also.
+     */
+    class ReadLock {
+    private:
+        friend Self;
+
+        using PtrT = const Type *;
+        using RefT = const Type &;
+
+        Self &_host;
+
+        PtrT _ptr;
+
+        ReadLock(Self &h, bool try_lock = false) : _host{h}, _ptr{nullptr}
+        {
+            if (try_lock) {
+                this->try_lock();
+            }
+        }
+
+    public:
+        ~ReadLock() { unlock(); }
+
+        bool try_lock() {
+            if (_host._try_block_for_read()) {
+                _ptr = &_host._storage;
+            }
+
+            return _ptr;
+        }
+
+        void unlock() {
+            if (_ptr) {
+                _host._unblock_after_read_and_empty_storage();
+                _ptr = nullptr;
+            }
+        }
+
+        bool is_locked() const { return _ptr; }
+        PtrT read() const { return _ptr; }
+        operator PtrT () const { return read(); }
+        operator RefT () const { return *read(); }
+        operator bool() const { return is_locked(); }
+    };
+
     Disposable() : _state{STATE_STORAGE_EMPTY_MASK} {}
+
+    // Returns an unlocked version of read lock
+    ReadLock get_lock() {
+        return ReadLock{*this};
+    }
+
+    /**
+     * Try to acquire read lock
+     * \returns instance of ReadLock class
+     */
+    ReadLock try_lock() {
+        return ReadLock{*this, true};
+    }
 
     /**
      * Non-blocking read and copy.
