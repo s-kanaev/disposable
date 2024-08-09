@@ -26,7 +26,7 @@ void Producer(std::atomic<bool> &cont) {
     printf("[G] Idx = %llu\n", idx);
     prepare_data(d, idx);
 
-    printf("[G] W\n");
+//     printf("[G] W\n");
     disposable.try_put(d);
 
     ++idx;
@@ -40,15 +40,25 @@ void Consumer(std::atomic<bool> &cont) {
   int pause_count = 0;
   const int pause_count_limit = 100;
   Data d;
+  auto lock = disposable.get_lock();
 
   while (true) {
-    printf("[C] R\n");
-    const bool success = disposable.try_read_into(d);
+//     printf("[C] R\n");
+//     const bool success = disposable.try_read_into(d);
+//
+//     if (!success) {
+//         printf("[C] P\n");
+//         ++pause_count;
+//         continue;
+//     }
 
-    if (!success) {
-        printf("[C] P\n");
-        ++pause_count;
-        continue;
+    if (lock.try_lock()) {
+      d = *lock;
+      lock.unlock();
+    } else {
+      printf("[C] P\n");
+      ++pause_count;
+      continue;
     }
 
     idx = d.v[0];
