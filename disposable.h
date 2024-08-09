@@ -28,7 +28,7 @@ public:
         if (_try_block_for_read()) {
             ret = _storage;
 
-            std::atomic_thread_fence(std::memory_order_release);
+//             std::atomic_thread_fence(std::memory_order_release);
             _unblock_after_read_and_empty_storage();
 
             return true;
@@ -47,7 +47,7 @@ public:
         if (_try_block_for_write()) {
             _storage = v;
 
-            std::atomic_thread_fence(std::memory_order_acquire);
+//             std::atomic_thread_fence(std::memory_order_acquire);
             _unblock_after_write_and_fill_storage();
 
             return true;
