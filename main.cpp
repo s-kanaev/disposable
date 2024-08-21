@@ -9,7 +9,7 @@ struct Data {
     unsigned long long v[SIZE];
 };
 
-Disposable<Data> disposable;
+Disposable<Data> disposable{&std::this_thread::yield};
 
 void prepare_data(Data &d, unsigned long long idx) {
    for (size_t i = 0; i < SIZE; ++i) {
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
   std::atomic<bool> cont{true};
 
   {
-    Disposable<int> d;
+    Disposable<int> d{&std::this_thread::yield};
     int v;
 
     bool success = d.try_read_into(v);
